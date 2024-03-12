@@ -84,41 +84,103 @@ for key, dataset in sents.items():
 
 from datasets import Dataset, DatasetDict
 
-# Create a Huggingface dataset for eng-yue
+# Create a Huggingface dataset for eng-yue and save to parquet
 eng_yue_train = Dataset.from_dict({"translation": [{"eng": eng, "yue": yue} for eng, yue in sents['eng-yue']['train']]})
 eng_yue_test = Dataset.from_dict({"translation": [{"eng": eng, "yue": yue} for eng, yue in sents['eng-yue']['test']]})
-eng_yue_dataset = DatasetDict({"train": eng_yue_train, "test": eng_yue_test})
+import os
 
-# Create a Huggingface dataset for eng-cmn
+# Create directories for each language pair if they do not exist
+language_pairs = ['eng-yue', 'eng-cmn', 'cmn-yue']
+for pair in language_pairs:
+    os.makedirs(f'translations/{pair}', exist_ok=True)
+
+eng_yue_train.to_parquet('translations/eng-yue/train-00000-of-00001.parquet')
+eng_yue_test.to_parquet('translations/eng-yue/test-00000-of-00001.parquet')
+
+# Create a Huggingface dataset for eng-cmn and save to parquet
 eng_cmn_train = Dataset.from_dict({"translation": [{"eng": eng, "cmn": cmn} for eng, cmn in sents['eng-cmn']['train']]})
 eng_cmn_test = Dataset.from_dict({"translation": [{"eng": eng, "cmn": cmn} for eng, cmn in sents['eng-cmn']['test']]})
-eng_cmn_dataset = DatasetDict({"train": eng_cmn_train, "test": eng_cmn_test})
+eng_cmn_train.to_parquet('translations/eng-cmn/train-00000-of-00001.parquet')
+eng_cmn_test.to_parquet('translations/eng-cmn/test-00000-of-00001.parquet')
 
-# Create a Huggingface dataset for cmn-yue
+# Create a Huggingface dataset for cmn-yue and save to parquet
 cmn_yue_train = Dataset.from_dict({"translation": [{"cmn": cmn, "yue": yue} for cmn, yue in sents['cmn-yue']['train']]})
 cmn_yue_test = Dataset.from_dict({"translation": [{"cmn": cmn, "yue": yue} for cmn, yue in sents['cmn-yue']['test']]})
-cmn_yue_dataset = DatasetDict({"train": cmn_yue_train, "test": cmn_yue_test})
+cmn_yue_train.to_parquet('translations/cmn-yue/train-00000-of-00001.parquet')
+cmn_yue_test.to_parquet('translations/cmn-yue/test-00000-of-00001.parquet')
 
-# Save datasets
-eng_yue_dataset.save_to_disk('translations/eng_yue')
-eng_cmn_dataset.save_to_disk('translations/eng_cmn')
-cmn_yue_dataset.save_to_disk('translations/cmn_yue')
-
-# Load datasets
-eng_yue_dataset = DatasetDict.load_from_disk('translations/eng_yue')
-eng_cmn_dataset = DatasetDict.load_from_disk('translations/eng_cmn')
-cmn_yue_dataset = DatasetDict.load_from_disk('translations/cmn_yue')
-
-# Print the first 5 examples of the training set in a prettier format
-print("First 5 examples of the training set:")
-for dataset_name, dataset in [("eng_yue", eng_yue_dataset), ("eng_cmn", eng_cmn_dataset), ("cmn_yue", cmn_yue_dataset)]:
-    print(f"\n{dataset_name} dataset:")
-    for example in dataset['train']['translation'][:5]:
-        print(f"- {example}")
-
-# Print the first 5 examples of the test set in a prettier format
-print("\nFirst 5 examples of the test set:")
-for dataset_name, dataset in [("eng_yue", eng_yue_dataset), ("eng_cmn", eng_cmn_dataset), ("cmn_yue", cmn_yue_dataset)]:
-    print(f"\n{dataset_name} dataset:")
-    for example in dataset['test']['translation'][:5]:
-        print(f"- {example}")
+datacard_yaml = f"""
+---
+language:
+- eng
+- yue
+- cmn
+task_categories:
+- translation
+task_ids: []
+config_names:
+- eng-yue
+- eng-cmn
+- cmn-yue
+dataset_info:
+- config_name: eng-yue
+  features:
+  - name: translation
+    dtype:
+      translation:
+        languages:
+        - eng
+        - yue
+  splits:
+  - name: test
+    num_examples: {len(sents['eng-yue']['test'])}
+  - name: train
+    num_examples: {len(sents['eng-yue']['train'])}
+- config_name: eng-cmn
+  features:
+  - name: translation
+    dtype:
+      translation:
+        languages:
+        - eng
+        - cmn
+  splits:
+  - name: test
+    num_examples: {len(sents['eng-cmn']['test'])}
+  - name: train
+    num_examples: {len(sents['eng-cmn']['train'])}
+- config_name: cmn-yue
+  features:
+  - name: translation
+    dtype:
+      translation:
+        languages:
+        - cmn
+        - yue
+  splits:
+  - name: test
+    num_examples: {len(sents['cmn-yue']['test'])}
+  - name: train
+    num_examples: {len(sents['cmn-yue']['train'])}
+configs:
+- config_name: eng-yue
+  data_files:
+  - split: test
+    path: eng-yue/test-*
+  - split: train
+    path: eng-yue/train-*
+- config_name: eng-cmn
+  data_files:
+  - split: test
+    path: eng-cmn/test-*
+  - split: train
+    path: eng-cmn/train-*
+- config_name: cmn-yue
+  data_files:
+  - split: test
+    path: cmn-yue/test-*
+  - split: train
+    path: cmn-yue/train-*
+---
+"""
+print(datacard_yaml)
