@@ -1,0 +1,18 @@
+{
+  "citation": "",
+  "description": "",
+  "features": {
+    "translation": {
+      "cmn": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "eng": {
+        "dtype": "string",
+        "_type": "Value"
+      }
+    }
+  },
+  "homepage": "",
+  "license": ""
+}
