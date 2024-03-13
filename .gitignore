@@ -1,3 +1,5 @@
 models/
 llama.cpp/
 .DS_Store
+__pycache__/
+.hydra/
