@@ -177,5 +177,5 @@ class DataCollatorForTagLLM:
         if len(clf_idx) > 0:
             model_inputs["clf_idx"] = clf_idx
     
-        return model_inputs
+        return dict(model_inputs)
 

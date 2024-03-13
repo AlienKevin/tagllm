@@ -182,7 +182,7 @@ def main(args: DictConfig) -> None:
             args.model.tokenizer_name, **tokenizer_kwargs
         )
     elif args.model.model_name_or_path:
-        tokenizer = LlamaTokenizer.from_pretrained(
+        tokenizer = AutoTokenizer.from_pretrained(
                 args.model.model_name_or_path, **tokenizer_kwargs
             )
         tokenizer.pad_token = tokenizer.eos_token

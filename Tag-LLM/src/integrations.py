@@ -5,7 +5,8 @@ import dataclasses
 import os
 
 import wandb
-from transformers.integrations import TrainerCallback, WandbCallback
+from transformers import TrainerCallback
+from transformers.integrations import WandbCallback
 from transformers.utils import is_torch_tpu_available, logging
 
 from .arguments import Arguments

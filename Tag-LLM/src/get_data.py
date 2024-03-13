@@ -61,8 +61,9 @@ def get_dataset(task_name, num_existing_tokens, tag_name_dict, num_token_per_tag
         lm_datasets_test = []
         
         single_lang = ["eng","yue","cmn"]
+        lang_datasets = ["eng-cmn", "eng-yue", "cmn-yue"]
 
-        for i, lang_dataset in enumerate(single_lang):
+        for i, lang_dataset in enumerate(lang_datasets):
 
             lm_dataset = load_dataset("AlienKevin/yue-cmn-eng", lang_dataset)
             lm_dataset_train = lm_dataset["train"]

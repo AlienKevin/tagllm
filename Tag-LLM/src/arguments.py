@@ -38,6 +38,12 @@ class TagTrainingArguments(TrainingArguments):
     remove_unused_columns: bool = False
     include_inputs_for_metrics: bool = True
 
+    debug: str = ""
+    dataloader_prefetch_factor: Optional[int] = None
+    fsdp: Optional[str] = ""
+    fsdp_config: Optional[str] = None
+    generation_config: Optional[str] = None
+
     write_outputs: bool = field(
         default=True,
         metadata={"help": ("If True, save outputs to .csv file in output dir.")},

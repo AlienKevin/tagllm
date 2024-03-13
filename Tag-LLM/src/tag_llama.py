@@ -19,7 +19,7 @@ from transformers.models.llama.modeling_llama import (
     LlamaDecoderLayer,
     LlamaMLP,
     LlamaRMSNorm,
-    apply_rotary_pos_emb,
+    # apply_rotary_pos_emb,
 )
 from transformers.utils import logging
 
@@ -122,6 +122,20 @@ class TagLlamaRotaryEmbedding(torch.nn.Module):
                 dtype=x.dtype, device=x.device
             ),
         )
+
+
+def rotate_half(x):
+    """Rotates half the hidden dims of the input."""
+    x1 = x[..., : x.shape[-1] // 2]
+    x2 = x[..., x.shape[-1] // 2 :]
+    return torch.cat((-x2, x1), dim=-1)
+
+def apply_rotary_pos_emb(q, k, cos, sin, offset: int = 0):
+    cos = cos[..., offset : q.shape[-2] + offset, :]
+    sin = sin[..., offset : q.shape[-2] + offset, :]
+    q_embed = (q * cos) + (rotate_half(q) * sin)
+    k_embed = (k * cos) + (rotate_half(k) * sin)
+    return q_embed, k_embed
 
 
 class TagLlamaAttention(LlamaAttention):
@@ -267,9 +281,11 @@ class TagLlamaDecoderLayer(LlamaDecoderLayer):
             num_heads=config.num_attention_heads,
         )
         self.mlp = LlamaMLP(
-            hidden_size=self.hidden_size,
-            intermediate_size=config.intermediate_size,
-            hidden_act=config.hidden_act,
+            LlamaConfig(
+                hidden_size=self.hidden_size,
+                intermediate_size=config.intermediate_size,
+                hidden_act=config.hidden_act,
+            )
         )
         self.input_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = LlamaRMSNorm(
