@@ -1,5 +1,6 @@
-After setting up conda environment:
+# Set up environment
 
 ```
-python -m pip install opencc-python-reimplemented
+conda env create -f environment.yml
+conda activate tagllm
 ```
