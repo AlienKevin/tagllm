@@ -18,5 +18,5 @@ training:
   warmup_ratio: 0.03
   lr_scheduler_type: cosine
 
-  save_steps: 1500
-  eval_steps: 1500
+  save_steps: 400
+  eval_steps: 1
