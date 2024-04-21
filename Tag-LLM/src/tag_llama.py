@@ -19,7 +19,7 @@ from transformers.models.llama.modeling_llama import (
     LlamaDecoderLayer,
     LlamaMLP,
     LlamaRMSNorm,
-    # apply_rotary_pos_emb,
+    apply_rotary_pos_emb,
 )
 from transformers.utils import logging
 
@@ -124,20 +124,6 @@ class TagLlamaRotaryEmbedding(torch.nn.Module):
         )
 
 
-def rotate_half(x):
-    """Rotates half the hidden dims of the input."""
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
-
-def apply_rotary_pos_emb(q, k, cos, sin, offset: int = 0):
-    cos = cos[..., offset : q.shape[-2] + offset, :]
-    sin = sin[..., offset : q.shape[-2] + offset, :]
-    q_embed = (q * cos) + (rotate_half(q) * sin)
-    k_embed = (k * cos) + (rotate_half(k) * sin)
-    return q_embed, k_embed
-
-
 class TagLlamaAttention(LlamaAttention):
     """Multi-headed attention from 'Attention Is All You Need' paper"""
 
@@ -239,10 +225,8 @@ class TagLlamaAttention(LlamaAttention):
 
         if attention_mask is not None:
             if attention_mask.size() != (bsz, 1, q_len, kv_seq_len):
-                raise ValueError(
-                    f"Attention mask should be of size "
-                    f"{(bsz, 1, q_len, kv_seq_len)}, but is {attention_mask.size()}"
-                )
+                attention_mask = attention_mask[..., -1, :]
+
             attn_weights = attn_weights + attention_mask
             attn_weights = torch.max(
                 attn_weights, torch.tensor(torch.finfo(attn_weights.dtype).min)
@@ -281,11 +265,9 @@ class TagLlamaDecoderLayer(LlamaDecoderLayer):
             num_heads=config.num_attention_heads,
         )
         self.mlp = LlamaMLP(
-            LlamaConfig(
-                hidden_size=self.hidden_size,
-                intermediate_size=config.intermediate_size,
-                hidden_act=config.hidden_act,
-            )
+            hidden_size=self.hidden_size,
+            intermediate_size=config.intermediate_size,
+            hidden_act=config.hidden_act,
         )
         self.input_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = LlamaRMSNorm(
@@ -352,15 +334,18 @@ class TagLlamaDecoderLayer(LlamaDecoderLayer):
 
 ###### Tag embedding ######
 class AugmentedTokenEncoder(torch.nn.Module):
-    def __init__(self, config, embedder, num_new_tokens):
+    def __init__(self, config, embedder, num_new_tokens, num_existing_tokens):
         super().__init__()
 
         self.token_dim = config.hidden_size
         self.original_embedder = embedder
 
+        if not config.freeze:
+            num_new_tokens += num_existing_tokens
+
         self.embedding = nn.Embedding(num_new_tokens, self.token_dim)
 
-        self.vocab_size = PRETRAINED_VOCAB_SIZE
+        self.vocab_size = PRETRAINED_VOCAB_SIZE + (num_existing_tokens if config.freeze else 0)
         self.added_tokens = [self.vocab_size + i for i in range(num_new_tokens)]
 
 
@@ -374,7 +359,7 @@ class AugmentedTokenEncoder(torch.nn.Module):
         
         # Special tokens
         token_indices = torch.zeros_like(input_ids)
-
+    
         for tid in self.added_tokens:
             token_indices = token_indices + (input_ids == tid)
 
@@ -408,11 +393,15 @@ class TagLlamaModel(LlamaPreTrainedModel):
         self.vocab_size = config.vocab_size
 
         self.embed_tokens = nn.Embedding(
-            config.vocab_size, config.hidden_size, self.padding_idx
+            config.vocab_size + (config.num_existing_tokens if config.freeze else 0), config.hidden_size, self.padding_idx
         )
 
         if config.num_new_tokens > 0:
-            self.augmented_embedder = AugmentedTokenEncoder(config, self.embed_tokens, config.num_new_tokens)
+            self.augmented_embedder = AugmentedTokenEncoder(config, self.embed_tokens, config.num_new_tokens, config.num_existing_tokens)
+
+        self.embed_tokens = nn.Embedding(
+            config.vocab_size, config.hidden_size, self.padding_idx
+        )
 
         self.layers = nn.ModuleList(
             [TagLlamaDecoderLayer(config) for _ in range(config.num_hidden_layers)]
@@ -681,6 +670,9 @@ class TagLlamaForCausalLM(LlamaPreTrainedModel, TagGenerationMixin):
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
         self.lm_head_reg = None
+        if config.regression:
+            self.lm_head_reg = nn.Linear(config.hidden_size, config.regression_out_dim, bias=False)
+
         self.word_embeddings = None
 
         # Initialize weights and apply final processing
@@ -692,6 +684,7 @@ class TagLlamaForCausalLM(LlamaPreTrainedModel, TagGenerationMixin):
         self.clfl = 0
         self.clfstep = 0
         self.output_dir = config.output_dir
+        self.print_loss_detail = True
 
     def get_input_embeddings(self):
         return self.model.embed_tokens
@@ -766,12 +759,12 @@ class TagLlamaForCausalLM(LlamaPreTrainedModel, TagGenerationMixin):
             loss = 0
             if reg_idx is not None:
 
-                logits_reg = self.lm_head_reg(hidden_states[reg_idx, reg_pred_idx, :])
-                reg_val = logits_reg[torch.arange(logits_reg.shape[0]), reg_dim]
-                label_reg = label_reg.to(reg_val.dtype) 
+                logits = self.lm_head_reg(hidden_states[reg_idx, reg_pred_idx, :])
+                logits = logits[torch.arange(logits.shape[0]), reg_dim]
+                label_reg = label_reg.to(logits.dtype) 
                 loss_fct = MSELoss()
 
-                loss = loss + loss_fct(reg_val, label_reg) * 100
+                loss = loss + loss_fct(logits, label_reg) * 100
 
                 self.regl = (self.regl * self.regstep + loss.item()) / (self.regstep + 1)
                 self.regstep += 1
@@ -794,7 +787,7 @@ class TagLlamaForCausalLM(LlamaPreTrainedModel, TagGenerationMixin):
                 self.clfstep += 1
                 
             # norm regularization
-            # loss += ((torch.linalg.norm(self.model.augmented_embedder.embedding.weight.data,dim=1)-AVG_NORM)**2).mean()
+            #loss += ((torch.linalg.norm(self.model.augmented_embedder.embedding.weight.data,dim=1)-AVG_NORM)**2).mean()
 
         else:
             loss = None
@@ -807,8 +800,10 @@ class TagLlamaForCausalLM(LlamaPreTrainedModel, TagGenerationMixin):
             output = (logits,) + outputs[1:]
             return (loss,) + output if loss is not None else output
 
-        if self.step_for_save % 4000 == 0:
-            print("Step", self.step_for_save, "\tAccumulated MSE:", self.regl, "\tAccumulated CE:", self.clfl)
+
+        if self.step_for_save % 1000 == 0 and self.print_loss_detail:
+            print("Accumulated MSE:", self.regl, "\tAccumulated CE:", self.clfl)
+
             try:
                 torch.save(self.model.augmented_embedder.state_dict(), self.output_dir + "/augmented_embedder.pth")
                 np.save(self.output_dir + "/embedding_weights.npy", self.model.augmented_embedder.embedding.weight.data.clone().detach().cpu().numpy())
@@ -819,6 +814,7 @@ class TagLlamaForCausalLM(LlamaPreTrainedModel, TagGenerationMixin):
                 np.save(self.output_dir + "/lm_head_reg.npy", self.lm_head_reg.weight.data.detach().cpu().numpy())             
             except:
                 pass
+
         self.step_for_save += 1
 
         return CausalLMOutputWithPast(

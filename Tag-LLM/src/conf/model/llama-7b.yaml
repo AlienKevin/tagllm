@@ -2,7 +2,7 @@
 # Hyperparams from https://github.com/tatsu-lab/stanford_alpaca#fine-tuning
 
 model:
-  model_name_or_path: deepseek-llm-7b-chat
+  model_name_or_path: llama-7b
 
 training:
   bf16: true
@@ -18,5 +18,5 @@ training:
   warmup_ratio: 0.03
   lr_scheduler_type: cosine
 
-  save_steps: 400
-  eval_steps: 1
+  save_steps: 1500
+  eval_steps: 1500

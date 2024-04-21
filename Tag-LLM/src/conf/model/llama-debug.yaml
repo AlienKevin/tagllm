@@ -2,7 +2,7 @@
 # A debug llama config
 
 defaults:
-  - deepseek-llm-7b-chat
+  - llama-7b
 
 model:
   llama_debug: true

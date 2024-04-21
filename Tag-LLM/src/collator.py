@@ -78,6 +78,8 @@ class DataCollatorForTagLLM:
             tokenized_input = self.tokenizer(instance_formulation)["input_ids"] + [self.tokenizer.eos_token_id]
             if instance["task"] == "Generation":
                 tokenized_input = tokenized_input[1:-1]
+            elif self.eval_mode:
+                tokenized_input = tokenized_input[:-1]
 
             if instance["regression"]:
                 label_reg = float(instance["output"])
@@ -93,16 +95,24 @@ class DataCollatorForTagLLM:
             if len(tokenized_input) > max_length:
                 if num_passed == 0 and idx == len(batch) - 1:
                     to_trim = len(tokenized_input) - max_length
-                    labels = labels[:-to_trim]
-                    tokenized_input = tokenized_input[:-to_trim]
+                    if instance["task"] == "Generation":
+                        labels = labels[:to_trim]
+                        tokenized_input = tokenized_input[:to_trim]
+                    else:
+                        labels = labels[to_trim:]
+                        tokenized_input = tokenized_input[to_trim:]
                 else:
                     if instance["regression"] or self.eval_mode:
                         prompt_len = prompt_len[:-1]
                         continue
 
                     to_trim = len(tokenized_input) - max_length
-                    labels = labels[:-to_trim]
-                    tokenized_input = tokenized_input[:-to_trim]
+                    if instance["task"] == "Generation":
+                        labels = labels[:to_trim]
+                        tokenized_input = tokenized_input[:to_trim]
+                    else:
+                        labels = labels[to_trim:]
+                        tokenized_input = tokenized_input[to_trim:]
             
             model_inputs["input_ids"].append(tokenized_input)
             model_inputs["labels"].append(labels)
@@ -177,5 +187,5 @@ class DataCollatorForTagLLM:
         if len(clf_idx) > 0:
             model_inputs["clf_idx"] = clf_idx
     
-        return dict(model_inputs)
+        return model_inputs
 
