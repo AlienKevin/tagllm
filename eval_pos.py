@@ -14,7 +14,7 @@ def get_dataset():
         ['idx', 'text', 'tokens', 'lemmas', 'upos', 'xpos', 'feats', 'head', 'deprel', 'deps', 'misc'])
     return train_dataset
 
-with open ('pos_Meta-Llama-3-8B-qlora-pos.jsonl', 'r') as f:
+with open ('pos_Meta-Llama-3-8B-tagllm-pos-1-reserved-unsloth.jsonl', 'r') as f:
     tags = [json.loads(line)['sents'][-1].split() for line in f]
 
 poseval = evaluate.load("poseval")

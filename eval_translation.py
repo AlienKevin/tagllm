@@ -23,26 +23,37 @@ def get_dataset():
     eval_dataset = interleave_datasets(lm_datasets_test)
     return eval_dataset
 
-with open ('translations_Meta-Llama-3-8B.jsonl', 'r') as f:
+with open ('translations_Meta-Llama-3-8B-tagllm-translation-1-reserved-unsloth.jsonl', 'r') as f:
     translations = [json.loads(line) for line in f]
 
-sacrebleu = evaluate.load("sacrebleu")
+seen_references = []
+seen_predictions = []
 
-references = []
-predictions = []
+unseen_references = []
+unseen_predictions = []
 
-for ref, pred in zip(get_dataset(), translations):
-    references.append(ref['target'])
-    predictions.append(pred['sents'][-1])
+for i, (ref, pred) in enumerate(zip(get_dataset(), translations)):
+    if i % 2 == 0:
+        seen_references.append(ref['target'])
+        seen_predictions.append(pred['sents'][-1])
+    else:
+        unseen_references.append(ref['target'])
+        unseen_predictions.append(pred['sents'][-1])
 
-results = sacrebleu.compute(predictions=predictions,
+def print_scores(predictions, references):
+    sacrebleu = evaluate.load("sacrebleu")
+    results = sacrebleu.compute(predictions=predictions,
                              references=references, tokenize='zh')
+    print('BLEU:', round(results["score"], 1))
 
-print('BLEU:', round(results["score"], 1))
+    chrf = evaluate.load("chrf")
+    results = chrf.compute(predictions=predictions,
+                                references=references, word_order=2)
+    print('ChRF++:', round(results["score"], 1))
 
-chrf = evaluate.load("chrf")
-
-results = chrf.compute(predictions=predictions,
-                             references=references, word_order=2)
-
-print('ChRF++:', round(results["score"], 1))
+print('Seen language pair:')
+print_scores(seen_predictions, seen_references)
+print('Unseen language pair:')
+print_scores(unseen_predictions, unseen_references)
+print('All language pairs:')
+print_scores(seen_predictions + unseen_predictions, seen_references + unseen_references)
