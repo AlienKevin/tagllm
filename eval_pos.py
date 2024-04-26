@@ -14,29 +14,47 @@ def get_dataset():
         ['idx', 'text', 'tokens', 'lemmas', 'upos', 'xpos', 'feats', 'head', 'deprel', 'deps', 'misc'])
     return train_dataset
 
-with open ('pos_Meta-Llama-3-8B-tagllm-pos-1-reserved-unsloth.jsonl', 'r') as f:
-    tags = [json.loads(line)['sents'][-1].split() for line in f]
+def eval(file_name):
+    with open (file_name, 'r') as f:
+        tags = [json.loads(line)['sents'][-1].split() for line in f]
 
-poseval = evaluate.load("poseval")
+    poseval = evaluate.load("poseval")
 
-references = []
-predictions = []
+    references = []
+    predictions = []
 
-for ref, pred in zip(get_dataset(), tags):
-    # if len(pred) < len(ref['tags']):
-    #     print(ref['tags'])
-    #     print(pred)
-    references.append(ref['tags'])
-    if len(pred) > len(ref['tags']):
-        # truncate if longer
-        pred = pred[:len(ref['tags'])]
-    elif len(pred) < len(ref['tags']):
-        # pad if shorter
-        pred += ['X'] * (len(ref['tags']) - len(pred))
-    predictions.append(pred)
+    for ref, pred in zip(get_dataset(), tags):
+        # if len(pred) < len(ref['tags']):
+        #     print(ref['tags'])
+        #     print(pred)
+        references.append(ref['tags'])
+        if len(pred) > len(ref['tags']):
+            # truncate if longer
+            pred = pred[:len(ref['tags'])]
+        elif len(pred) < len(ref['tags']):
+            # pad if shorter
+            pred += ['X'] * (len(ref['tags']) - len(pred))
+        predictions.append(pred)
 
-results = poseval.compute(predictions=predictions, references=references, zero_division=0)
+    results = poseval.compute(predictions=predictions, references=references, zero_division=0)
 
-print('accuracy:', round(results["accuracy"], 3))
-print('macro avg f1:', round(results['macro avg']['f1-score'], 3))
-print('weighted avg f1:', round(results['weighted avg']['f1-score'], 3))
+    accuracy = round(results["accuracy"], 3)
+    macro_avg_f1 = round(results['macro avg']['f1-score'], 3)
+    weighted_avg_f1 = round(results['weighted avg']['f1-score'], 3)
+    return accuracy, macro_avg_f1, weighted_avg_f1
+
+import glob
+
+# Find all jsonl files starting with 'pos_'
+pos_files = glob.glob('pos_*.jsonl')
+
+import csv
+
+# Evaluate each found file and write results to a CSV file
+with open('pos_evaluation_results.csv', mode='w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(['Config', 'Accuracy', 'Macro Avg F1', 'Weighted Avg F1'])
+    
+    for file in pos_files:
+        accuracy, macro_avg_f1, weighted_avg_f1 = eval(file)
+        writer.writerow([file, accuracy, macro_avg_f1, weighted_avg_f1])

@@ -23,37 +23,46 @@ def get_dataset():
     eval_dataset = interleave_datasets(lm_datasets_test)
     return eval_dataset
 
-with open ('translations_Meta-Llama-3-8B-tagllm-translation-1-reserved-unsloth.jsonl', 'r') as f:
-    translations = [json.loads(line) for line in f]
+import glob
+import csv
 
-seen_references = []
-seen_predictions = []
+def evaluate_translation(file_name):
+    with open(file_name, 'r') as f:
+        translations = [json.loads(line) for line in f]
 
-unseen_references = []
-unseen_predictions = []
+    seen_references = []
+    seen_predictions = []
 
-for i, (ref, pred) in enumerate(zip(get_dataset(), translations)):
-    if i % 2 == 0:
-        seen_references.append(ref['target'])
-        seen_predictions.append(pred['sents'][-1])
-    else:
-        unseen_references.append(ref['target'])
-        unseen_predictions.append(pred['sents'][-1])
+    unseen_references = []
+    unseen_predictions = []
 
-def print_scores(predictions, references):
-    sacrebleu = evaluate.load("sacrebleu")
-    results = sacrebleu.compute(predictions=predictions,
-                             references=references, tokenize='zh')
-    print('BLEU:', round(results["score"], 1))
+    for i, (ref, pred) in enumerate(zip(get_dataset(), translations)):
+        if i % 2 == 0:
+            seen_references.append(ref['target'])
+            seen_predictions.append(pred['sents'][-1])
+        else:
+            unseen_references.append(ref['target'])
+            unseen_predictions.append(pred['sents'][-1])
 
-    chrf = evaluate.load("chrf")
-    results = chrf.compute(predictions=predictions,
-                                references=references, word_order=2)
-    print('ChRF++:', round(results["score"], 1))
+    def compute_scores(predictions, references):
+        sacrebleu = evaluate.load("sacrebleu")
+        bleu_results = sacrebleu.compute(predictions=predictions, references=references, tokenize='zh')
+        chrf = evaluate.load("chrf")
+        chrf_results = chrf.compute(predictions=predictions, references=references, word_order=2)
+        return round(bleu_results["score"], 1), round(chrf_results["score"], 1)
 
-print('Seen language pair:')
-print_scores(seen_predictions, seen_references)
-print('Unseen language pair:')
-print_scores(unseen_predictions, unseen_references)
-print('All language pairs:')
-print_scores(seen_predictions + unseen_predictions, seen_references + unseen_references)
+    seen_bleu, seen_chrf = compute_scores(seen_predictions, seen_references)
+    unseen_bleu, unseen_chrf = compute_scores(unseen_predictions, unseen_references)
+    all_bleu, all_chrf = compute_scores(seen_predictions + unseen_predictions, seen_references + unseen_references)
+
+    return seen_bleu, seen_chrf, unseen_bleu, unseen_chrf, all_bleu, all_chrf
+
+translation_files = glob.glob('translations_*.jsonl')
+
+with open('translation_evaluation_results.csv', mode='w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(['Config', 'Seen BLEU', 'Seen ChRF++', 'Unseen BLEU', 'Unseen ChRF++', 'All BLEU', 'All ChRF++'])
+    
+    for file_name in translation_files:
+        seen_bleu, seen_chrf, unseen_bleu, unseen_chrf, all_bleu, all_chrf = evaluate_translation(file_name)
+        writer.writerow([file_name, seen_bleu, seen_chrf, unseen_bleu, unseen_chrf, all_bleu, all_chrf])

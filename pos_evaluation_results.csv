@@ -1,0 +1,6 @@
+Config,Accuracy,Macro Avg F1,Weighted Avg F1
+pos_Meta-Llama-3-8B-tagllm-pos-1-reserved-unsloth.jsonl,0.117,0.082,0.127
+pos_Meta-Llama-3-8B-qlora-pos.jsonl,0.135,0.054,0.14
+pos_Meta-Llama-3-8B-qlora-pos-no-lang.jsonl,0.132,0.048,0.137
+pos_Meta-Llama-3-8B.jsonl,0.129,0.047,0.134
+pos_Meta-Llama-3-8B-qlora-pos-no-tag.jsonl,0.152,0.052,0.149
