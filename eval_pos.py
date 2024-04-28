@@ -40,8 +40,13 @@ def eval(file_name):
 
     accuracy = round(results["accuracy"], 3)
     macro_avg_f1 = round(results['macro avg']['f1-score'], 3)
+    macro_avg_precision = round(results["macro avg"]["precision"], 3)
+    macro_avg_recall = round(results["macro avg"]["recall"], 3)
     weighted_avg_f1 = round(results['weighted avg']['f1-score'], 3)
-    return accuracy, macro_avg_f1, weighted_avg_f1
+    weighted_avg_precision = round(results["weighted avg"]["precision"], 3)
+    weighted_avg_recall = round(results["weighted avg"]["recall"], 3)
+
+    return accuracy, macro_avg_f1, macro_avg_precision, macro_avg_recall, weighted_avg_f1, weighted_avg_precision, weighted_avg_recall
 
 import glob
 
@@ -53,8 +58,8 @@ import csv
 # Evaluate each found file and write results to a CSV file
 with open('pos_evaluation_results.csv', mode='w', newline='') as file:
     writer = csv.writer(file)
-    writer.writerow(['Config', 'Accuracy', 'Macro Avg F1', 'Weighted Avg F1'])
+    writer.writerow(['Config', 'Accuracy', 'Macro Avg F1', 'Macro Avg Precision', 'Macro Avg Recall', 'Weighted Avg F1', 'Weighted Avg Precision', 'Weighted Avg Recall'])
     
     for file in pos_files:
-        accuracy, macro_avg_f1, weighted_avg_f1 = eval(file)
-        writer.writerow([file, accuracy, macro_avg_f1, weighted_avg_f1])
+        accuracy, macro_avg_f1, macro_avg_precision, macro_avg_recall, weighted_avg_f1, weighted_avg_precision, weighted_avg_recall = eval(file)
+        writer.writerow([file, accuracy, macro_avg_f1, macro_avg_precision, macro_avg_recall, weighted_avg_f1, weighted_avg_precision, weighted_avg_recall])
