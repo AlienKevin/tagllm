@@ -29,7 +29,7 @@ We adapt the [training script](https://huggingface.co/blog/mlabonne/orpo-llama-3
 | Learnable Tags | Translation | `tagllm-translation-unsloth.ipynb` |
 
 # Testing
-We wrote our own test scripts for each configuration and task. Each test scripts should generate JSONL outputs under the `experiment_results/` folder. See the `test_scripts/` folder for details:
+We wrote our own test scripts for each configuration and task. Each test script should generate a JSONL output under the `experiment_results/` folder. See the `test_scripts/` folder for details:
 
 | Configuration | Task | Script |
 | -------- | ------- | -------- |
@@ -45,6 +45,6 @@ We wrote our own test scripts for each configuration and task. Each test scripts
 | Learnable Tags | Translation | `test_translation_tagllm.ipynb` |
 
 # Evaluation
-Run `python eval_pos.py` to generate `pos_evaluation_results.csv` under `experiment_results/`. We use HuggingFace's poseval package to reliably calculate the accuracy and F1 measures for the POS tagging task.
+Run `python eval_pos.py` to generate `pos_evaluation_results.csv` under `experiment_results/`. We use HuggingFace's poseval module to reliably calculate the accuracy and F1 measures for the POS tagging task.
 
 Similarly, run `python eval_translation.py` to generate `translation_evaluation_results.csv` under `experiment_results/`. We use the standard SacreBLEU package to reliably calculate the BLEU and chrF++ scores for the translation task.
