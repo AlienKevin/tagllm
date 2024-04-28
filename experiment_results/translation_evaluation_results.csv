@@ -1,6 +1,6 @@
-Config,Seen BLEU,Seen ChRF++,Unseen BLEU,Unseen ChRF++,All BLEU,All ChRF++
-translations_Meta-Llama-3-8B-qlora-translation-no-tag.jsonl,14.6,10.7,31.5,23.6,20.3,13.9
-translations_Meta-Llama-3-8B-qlora-translation.jsonl,14.8,10.9,32.1,24.1,20.6,14.2
-translations_Meta-Llama-3-8B.jsonl,14.3,10.6,32.4,24.1,20.4,13.9
-translations_Meta-Llama-3-8B-qlora-translation-no-lang.jsonl,16.2,11.5,32.1,24.0,21.5,14.6
-translations_Meta-Llama-3-8B-tagllm-translation-1-reserved-unsloth.jsonl,14.0,10.4,30.4,22.7,19.5,13.4
+Config,Seen BLEU,Seen ChrF++,Unseen BLEU,Unseen ChrF++,All BLEU,All ChrF++
+experiment_results/translations_Meta-Llama-3-8B-qlora-translation-no-tag.jsonl,14.6,10.7,31.5,23.6,20.3,13.9
+experiment_results/translations_Meta-Llama-3-8B-qlora-translation.jsonl,14.8,10.9,32.1,24.1,20.6,14.2
+experiment_results/translations_Meta-Llama-3-8B.jsonl,14.3,10.6,32.4,24.1,20.4,13.9
+experiment_results/translations_Meta-Llama-3-8B-qlora-translation-no-lang.jsonl,16.2,11.5,32.1,24.0,21.5,14.6
+experiment_results/translations_Meta-Llama-3-8B-tagllm-translation-1-reserved-unsloth.jsonl,14.0,10.4,30.4,22.7,19.5,13.4

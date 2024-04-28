@@ -51,12 +51,12 @@ def eval(file_name):
 import glob
 
 # Find all jsonl files starting with 'pos_'
-pos_files = glob.glob('pos_*.jsonl')
+pos_files = glob.glob('experiment_results/pos_*.jsonl')
 
 import csv
 
 # Evaluate each found file and write results to a CSV file
-with open('pos_evaluation_results.csv', mode='w', newline='') as file:
+with open('experiment_results/pos_evaluation_results.csv', mode='w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(['Config', 'Accuracy', 'Macro Avg F1', 'Macro Avg Precision', 'Macro Avg Recall', 'Weighted Avg F1', 'Weighted Avg Precision', 'Weighted Avg Recall'])
     

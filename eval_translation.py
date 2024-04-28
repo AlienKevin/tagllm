@@ -57,11 +57,11 @@ def evaluate_translation(file_name):
 
     return seen_bleu, seen_chrf, unseen_bleu, unseen_chrf, all_bleu, all_chrf
 
-translation_files = glob.glob('translations_*.jsonl')
+translation_files = glob.glob('experiment_results/translations_*.jsonl')
 
-with open('translation_evaluation_results.csv', mode='w', newline='') as file:
+with open('experiment_results/translation_evaluation_results.csv', mode='w', newline='') as file:
     writer = csv.writer(file)
-    writer.writerow(['Config', 'Seen BLEU', 'Seen ChRF++', 'Unseen BLEU', 'Unseen ChRF++', 'All BLEU', 'All ChRF++'])
+    writer.writerow(['Config', 'Seen BLEU', 'Seen ChrF++', 'Unseen BLEU', 'Unseen ChrF++', 'All BLEU', 'All ChrF++'])
     
     for file_name in translation_files:
         seen_bleu, seen_chrf, unseen_bleu, unseen_chrf, all_bleu, all_chrf = evaluate_translation(file_name)
