@@ -4,39 +4,43 @@ cc = OpenCC('t2s')
 import random
 random.seed(42)
 
+from pathlib import Path
+
+datasets_dir = Path('datasets')
+
 sents = {}
 
-with open('abc-eng-yue/yue.txt', 'r') as f:
+with open(datasets_dir/'abc-eng-yue/yue.txt', 'r') as f:
     yue = f.read().split('\n')
 
-with open('abc-eng-yue/eng.txt', 'r') as f:
+with open(datasets_dir/'abc-eng-yue/eng.txt', 'r') as f:
     eng = f.read().split('\n')
 
-with open('wordshk-eng-yue/minus15/yue.txt', 'r') as f:
+with open(datasets_dir/'wordshk-eng-yue/minus15/yue.txt', 'r') as f:
     yue += f.read().split('\n')
 
-with open('wordshk-eng-yue/minus15/en.txt', 'r') as f:
+with open(datasets_dir/'wordshk-eng-yue/minus15/en.txt', 'r') as f:
     eng += f.read().split('\n')
 
-with open('wordshk-eng-yue/plus15/train.yue.txt', 'r') as f:
+with open(datasets_dir/'wordshk-eng-yue/plus15/train.yue.txt', 'r') as f:
     yue += f.read().split('\n')
 
-with open('wordshk-eng-yue/plus15/train.en.txt', 'r') as f:
+with open(datasets_dir/'wordshk-eng-yue/plus15/train.en.txt', 'r') as f:
     eng += f.read().split('\n')
 
 sents['eng-yue'] = {}
 sents['eng-yue']['train'] = list((eng, yue) for eng, yue in zip(eng, yue) if len(eng) > 0 and len(yue) > 0)
 
-with open('wordshk-eng-yue/plus15/test.yue.txt', 'r') as f:
+with open(datasets_dir/'wordshk-eng-yue/plus15/test.yue.txt', 'r') as f:
     yue = f.read().split('\n')
 
-with open('wordshk-eng-yue/plus15/test.en.txt', 'r') as f:
+with open(datasets_dir/'wordshk-eng-yue/plus15/test.en.txt', 'r') as f:
     eng = f.read().split('\n')
 
 sents['eng-yue']['test'] = list((eng, yue) for eng, yue in zip(eng, yue) if len(eng) > 0 and len(yue) > 0)
 
 
-with open('wmt19-eng-cmn/news-commentary-v14.en-zh.tsv', 'r') as f:
+with open(datasets_dir/'wmt19-eng-cmn/news-commentary-v14.en-zh.tsv', 'r') as f:
     import csv
     en = []
     zh = []
@@ -58,10 +62,10 @@ sents['eng-cmn']['train'] = eng_cmn[1500:]
 sents['eng-cmn']['test'] = eng_cmn[:1500]
 
 
-with open('kfcd-cmn-yue/yue.txt', 'r') as f:
+with open(datasets_dir/'kfcd-cmn-yue/yue.txt', 'r') as f:
     yue = f.read().split('\n')
 
-with open('kfcd-cmn-yue/cmn.txt', 'r') as f:
+with open(datasets_dir/'kfcd-cmn-yue/cmn.txt', 'r') as f:
     cmn = [cc.convert(x) for x in f.read().split('\n')]
 
 cmn_yue = list(zip(cmn, yue))
@@ -92,22 +96,22 @@ import os
 # Create directories for each language pair if they do not exist
 language_pairs = ['eng-yue', 'eng-cmn', 'cmn-yue']
 for pair in language_pairs:
-    os.makedirs(f'translations/{pair}', exist_ok=True)
+    os.makedirs(datasets_dir/'translations'/pair, exist_ok=True)
 
-eng_yue_train.to_parquet('translations/eng-yue/train-00000-of-00001.parquet')
-eng_yue_test.to_parquet('translations/eng-yue/test-00000-of-00001.parquet')
+eng_yue_train.to_parquet(datasets_dir/'translations/eng-yue/train-00000-of-00001.parquet')
+eng_yue_test.to_parquet(datasets_dir/'translations/eng-yue/test-00000-of-00001.parquet')
 
 # Create a Huggingface dataset for eng-cmn and save to parquet
 eng_cmn_train = Dataset.from_dict({"translation": [{"eng": eng, "cmn": cmn} for eng, cmn in sents['eng-cmn']['train']]})
 eng_cmn_test = Dataset.from_dict({"translation": [{"eng": eng, "cmn": cmn} for eng, cmn in sents['eng-cmn']['test']]})
-eng_cmn_train.to_parquet('translations/eng-cmn/train-00000-of-00001.parquet')
-eng_cmn_test.to_parquet('translations/eng-cmn/test-00000-of-00001.parquet')
+eng_cmn_train.to_parquet(datasets_dir/'translations/eng-cmn/train-00000-of-00001.parquet')
+eng_cmn_test.to_parquet(datasets_dir/'translations/eng-cmn/test-00000-of-00001.parquet')
 
 # Create a Huggingface dataset for cmn-yue and save to parquet
 cmn_yue_train = Dataset.from_dict({"translation": [{"cmn": cmn, "yue": yue} for cmn, yue in sents['cmn-yue']['train']]})
 cmn_yue_test = Dataset.from_dict({"translation": [{"cmn": cmn, "yue": yue} for cmn, yue in sents['cmn-yue']['test']]})
-cmn_yue_train.to_parquet('translations/cmn-yue/train-00000-of-00001.parquet')
-cmn_yue_test.to_parquet('translations/cmn-yue/test-00000-of-00001.parquet')
+cmn_yue_train.to_parquet(datasets_dir/'translations/cmn-yue/train-00000-of-00001.parquet')
+cmn_yue_test.to_parquet(datasets_dir/'translations/cmn-yue/test-00000-of-00001.parquet')
 
 datacard_yaml = f"""
 ---

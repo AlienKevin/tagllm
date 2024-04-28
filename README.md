@@ -1,15 +1,11 @@
-# Set up environment
-
+# Setup Virtual Environment
 ```
-conda create -n tagllm python=3.10
+conda create -n tagllm python=3.10 -y
 conda activate tagllm
-cd Tag-LLM
-python -m pip install -r requirements.txt
+python -m pip install opencc-python-reimplemented datasets
 ```
 
-# Train
+# Dataset Generation
 ```
-cd Tag-LLM
-export KMP_DUPLICATE_LIB_OK=TRUE
-python –m src.train
+python gen_translation_dataset.py
 ```
